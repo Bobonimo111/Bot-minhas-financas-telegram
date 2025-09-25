@@ -25,21 +25,20 @@ def api(TOKEN, BASE_URL,timeout):
                 messageObj =  polingUpdate["message"]
                 chatObj = {
                     "id": messageObj["chat"]["id"],
-                    "title": messageObj["chat"]["title"],
+                    "title": messageObj["chat"]["title"] if "title" in messageObj["chat"] else None,
+                    "type":  messageObj["chat"]["type"]
                 }
                 
-                #Aq temos o texto enviado
+                #Aq temos o texto enviado no chat ou ate para o proprio bot
                 textData = {
                     "text":messageObj["text"], 
                     "date":messageObj["date"],
                     "first_name":messageObj["from"]["first_name"]
                 }
                 
-               
-                
-                confirmMessage = commandsController(textData=textData);
-                
-                sendMessage(BASE_URL,confirmMessage,chat_id=chatObj["id"])
+                if chatObj["type"] != "private":
+                    confirmMessage = commandsController(textData=textData);
+                    sendMessage(BASE_URL,confirmMessage,chat_id=chatObj["id"])
         
 
 
@@ -84,11 +83,11 @@ def commandsController(textData):
     commands = {
         "/start" : lambda : welcomeMessage(textData["first_name"]), # type: ignore
         "/save" :lambda : saveInDataBase(text),
-        "/list" : listAllShoppingWithOutDate(),
-        "/ldat" : listAllShoppingBetweenDates(),
-        "/expe":getTotalExpensesgWithOutDate(),
-        "/edat":getTotalExpensesBetweenDate(),
-        "/cat" : createNewCategoryInDataBase()
+        "/list" : lambda :  listAllShoppingWithOutDate(),
+        "/ldat" :lambda :  listAllShoppingBetweenDates(),
+        "/expe": lambda : getTotalExpensesgWithOutDate(),
+        "/edat": lambda : getTotalExpensesBetweenDate(),
+        "/cat" : lambda :  createNewCategoryInDataBase()
     }
     
   
@@ -107,7 +106,7 @@ def welcomeMessage(userName = None):
     print("função welcomeMessage iniciada!")
     return f"Grettings Welcome! {userName}"
 
-def saveInDataBase():
+def saveInDataBase(text):
     return "Not Implemented"
     
 def listAllShoppingWithOutDate():
