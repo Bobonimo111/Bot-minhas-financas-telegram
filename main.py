@@ -1,3 +1,4 @@
+from curses import keyname
 import requests
 from time import sleep
 from dotenv import load_dotenv
@@ -20,6 +21,7 @@ def api(TOKEN, BASE_URL,timeout):
             print("Updater não esta vazio")
             offset = int(polingUpdate["update_id"]) + 1
             #My_chat_member serve para outra coisa no chat 
+            #new_chat_member São configurações de grupo 
             if "my_chat_member" not in polingUpdate and "new_chat_member" not in polingUpdate["message"]: 
                 #Aq contemos dados como id,first_name,type
                 messageObj =  polingUpdate["message"]
@@ -74,6 +76,7 @@ def getUpdates(BASE_URL, offset=None,timeout = 5):
 def commandsController(textData):
     print("Cotroller commands iniciado")
     
+    
     #Processa a mensagem para retirar o comando e armazenar a mensagem
     breakText = (textData["text"].strip()).split(" ")
     command = breakText[0]
@@ -81,22 +84,52 @@ def commandsController(textData):
         
     #Essa função de controle, aonde os comandos vão ser tratados e executados
     commands = {
-        "/start" : lambda : welcomeMessage(textData["first_name"]), # type: ignore
-        "/save" :lambda : saveInDataBase(text),
-        "/list" : lambda :  listAllShoppingWithOutDate(),
-        "/ldat" :lambda :  listAllShoppingBetweenDates(),
-        "/expe": lambda : getTotalExpensesgWithOutDate(),
-        "/edat": lambda : getTotalExpensesBetweenDate(),
-        "/cat" : lambda :  createNewCategoryInDataBase()
+    "/start": {
+        "desc": "Inicia o bot e mostra mensagem de boas-vindas",
+        "func": lambda: welcomeMessage(textData["first_name"]),  # type: ignore
+    },
+    "/save": {
+        "desc": "Salvar compra no banco de dados",
+        "func": lambda: saveInDataBase(text),
+    },
+    "/list": {
+        "desc": "Listar todas as compras sem data",
+        "func": lambda: listAllShoppingWithOutDate(),
+    },
+    "/ldat": {
+        "desc": "Listar todas as compras entre datas",
+        "func": lambda: listAllShoppingBetweenDates(),
+    },
+    "/expe": {
+        "desc": "Total de despesas sem data",
+        "func": lambda: getTotalExpensesgWithOutDate(),
+    },
+    "/edat": {
+        "desc": "Total de despesas entre datas",
+        "func": lambda: getTotalExpensesBetweenDate(),
+    },
+    "/cat": {
+        "desc": "Criar nova categoria no banco de dados",
+        "func": lambda: createNewCategoryInDataBase(),
+    },
     }
+
     
+    #Confirma sé um comando ou não
+    if("/" not in textData["text"][0]):
+        msg = "Comandos disponiveis: "
+        for c in commands.keys():
+            msg += f"\n {c}"
+        return msg
   
     if command not in commands:
-        print("comando não encontrado na lista de comandos")
-        return None
+        msg = "Comando não encontrado: "
+        for c in commands.keys():
+            msg += f"\n {c}"
+        return msg
     
     print("Cotroller retornando valor")
-    funcInstance = commands.get(f"{command}")
+    funcInstance = commands.get(f"{command}").get("func")
     mensageReturn = funcInstance()
     print(f"Mensagem de retorno: {mensageReturn}")
     return mensageReturn
