@@ -1,8 +1,7 @@
-from curses import keyname
 import requests
-from time import sleep
 from dotenv import load_dotenv
 import os
+from database import Category,Gasto,User,Connection
 
 
 def api(TOKEN, BASE_URL,timeout):
@@ -35,7 +34,8 @@ def api(TOKEN, BASE_URL,timeout):
                 textData = {
                     "text":messageObj["text"], 
                     "date":messageObj["date"],
-                    "first_name":messageObj["from"]["first_name"]
+                    "first_name":messageObj["from"]["first_name"],
+                    "user_id":messageObj["from"]["id"]
                 }
                 
                 if chatObj["type"] != "private":
@@ -90,7 +90,7 @@ def commandsController(textData):
     },
     "/save": {
         "desc": "Salvar compra no banco de dados",
-        "func": lambda: saveInDataBase(text),
+        "func": lambda: saveInDataBase(text,textData["user_id"]),
     },
     "/list": {
         "desc": "Listar todas as compras sem data",
@@ -139,9 +139,23 @@ def welcomeMessage(userName = None):
     print("função welcomeMessage iniciada!")
     return f"Grettings Welcome! {userName}"
 
-def saveInDataBase(text):
+def saveInDataBase(text,user_id):
+    conn = Connection()
+    
+    findUser = conn.checkIfExists(User.id_telegram, user_id)
+    
+    #Criar novo usuario caso não exista
+    if(findUser == None):
+        user = User(id_telegram=user_id)
+        conn.save(user)    
+    
+    #Quebrar e gerar novo gasto no sistema
+    gasto = Gasto()
+
+    
     return "Not Implemented"
     
+#Listar todas as compras sem uma data
 def listAllShoppingWithOutDate():
     return "Not Implemented"
     
