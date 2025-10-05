@@ -51,7 +51,7 @@ jobs:
 
           if [ ! -d ".git" ]; then
             echo "Repositório não clonado. Clonando..."
-            git clone --branch deploy https://github.com/Bobonimo111/Bot-minhas-financas-telegram.git 
+            git clone --branch deploy https://github.com/Bobonimo111/Bot-minhas-financas-telegram.git  
           fi
 
           # 1. Busca todas as referências remotas
@@ -64,7 +64,7 @@ jobs:
           git pull origin deploy
            
           # Ativa o ambiente virtual
-          source venv/bin/activate
+          source .venv/bin/activate
           
           # 4. Instale/Atualize as dependências Python
           echo "Instalando dependências via pip..."
