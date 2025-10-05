@@ -1,0 +1,87 @@
+name: Send to production server
+
+on:
+  push:
+    # Mude 'main' para a branch que você quer que acione o deploy (ex: 'production')
+    branches:
+      - deploy
+      
+jobs:
+  deploy:
+    # Garante que o deploy só rode após um merge na branch especificada.
+    # Se você quer rodar em qualquer push, remova esta linha.
+    # type: merged_pull_request 
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📦 Checkout do Código
+      uses: actions/checkout@v4
+
+    # --- Configuração SSH e Chave Privada ---
+    - name: 🔑 Configurar Chave SSH Privada
+      # Usaremos uma Action popular para facilitar a configuração do SSH
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: ⚙️ Adicionar Host do Servidor aos Known Hosts
+      run: |
+        ssh-keyscan ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+    # --- Execução do Deploy e Scripts Remotos ---
+    - name: 🚀 Executar Deploy e Script de Pós-Deploy
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        # Port 22 é o padrão, mude se o seu for diferente
+        port: 22 
+        script: |
+          # Navegue até o diretório de deploy
+          cd ${{ secrets.DEPLOY_TARGET }}
+
+          # Comando de Deploy: Puxe a última versão do seu repositório
+          # Se o seu repo for privado, a chave SSH configurada acima (Deploy Key)
+          # deve estar adicionada ao seu repo GitHub OU você deve usar HTTPS com um PAT.
+          # Neste exemplo, estamos assumindo que você está apenas rodando comandos.
+          # Para um deploy básico, o git pull é o mais comum:
+
+          if [ ! -d ".git" ]; then
+            echo "Repositório não clonado. Clonando..."
+            git clone --branch deploy git@github.com:<SEU_USUARIO>/<SEU_REPO>.git .
+          fi
+
+          # 1. Busca todas as referências remotas
+          git fetch origin
+          
+          # 2. Faz o checkout da branch desejada (garante que estamos nela)
+          git checkout deploy
+          
+          # 3. Puxa as últimas alterações da branch remota
+          git pull origin deploy
+           
+          # Ativa o ambiente virtual
+          source venv/bin/activate
+          
+          # 4. Instale/Atualize as dependências Python
+          echo "Instalando dependências via pip..."
+          # O -r requirements.txt é o padrão para projetos Python
+          pip install -r requirements.txt
+          
+          # 5. Execute comandos de Pós-Deploy (ex: migração de banco de dados)
+          # echo "Executando migrações de banco de dados (se for Django/Flask/etc)..."
+          # Exemplo para Django:
+          # python manage.py migrate --noinput
+          
+          # 6. Reinicie o Serviço da Aplicação (Gunicorn/uWSGI + Nginx/Apache)
+          echo "Reiniciando o serviço da aplicação..."
+          # Se você usa Gunicorn ou uWSGI gerenciado pelo systemd/Supervisor:
+          # É o método mais seguro e comum.
+          sudo systemctl restart telegram-bot.service
+          
+          # 7. Desative o ambiente virtual
+          deactivate
+          
+          echo "Deploy Python concluído com sucesso!"
