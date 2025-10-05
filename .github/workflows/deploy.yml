@@ -41,6 +41,7 @@ jobs:
         script: |
           # Navegue até o diretório de deploy
           cd ${{ secrets.DEPLOY_TARGET }}
+          echo ${{secrets.DEPLOY_TARGET}}
 
           # Comando de Deploy: Puxe a última versão do seu repositório
           # Se o seu repo for privado, a chave SSH configurada acima (Deploy Key)
